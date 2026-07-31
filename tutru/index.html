@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luận Giải Tứ Trụ — Phần 2</title>
+<meta name="description" content="Lập Tứ Trụ (Bát Tự) và luận giải chi tiết: vượng nhược Nhật Nguyên, dụng thần, đại vận, lưu niên và dự đoán theo lịch Việt Nam.">
+<meta property="og:title" content="Luận Giải Tứ Trụ">
+<meta property="og:description" content="Lập Tứ Trụ và luận giải Nhật Nguyên, dụng thần, đại vận, lưu niên theo tiết khí thực.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Nghiên cứu &amp; phát triển · Mèo Đen · Hạ 2026</div>
+  <h1>Luận Giải <em>Tứ Trụ</em></h1>
+  <p class="subtitle fade-hint">Lập lá số Tứ Trụ (Bát Tự) và luận giải chi tiết theo lịch Việt Nam.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="card" id="panel-info">
+    <div class="form-title">Phần 1 — Thông tin người được dự đoán</div>
+    <p class="form-desc">Điền các thông tin cơ bản, sau đó chọn cách nhập ngày sinh bên dưới để lập Tứ Trụ.</p>
+    <div class="grid">
+      <div class="field field-full"><label>Họ và tên</label><input type="text" id="p-name" placeholder="Không bắt buộc"></div>
+      <div class="field"><label>Giới tính</label>
+        <select id="p-gender">
+          <option value="nam">Nam</option>
+          <option value="nu">Nữ</option>
+        </select>
+      </div>
+      <div class="field"><label>Ngày dự đoán</label><input type="date" id="p-predict-date"></div>
+      <div class="field field-full"><label>Ghi chú</label><input type="text" id="p-note" placeholder="Không bắt buộc"></div>
+    </div>
+  </div>
+
+  <p class="form-desc" style="text-align:center;margin:30px 0 -8px;">Ngày tháng năm sinh — chọn 1 trong 3 cách nhập:</p>
+
+  <div class="tabs">
+    <div class="tab-main active" data-tab="a" onclick="switchTab('a')">Dương lịch</div>
+    <div class="tabs-secondary">
+      <div class="tab-sub" data-tab="b" onclick="switchTab('b')">Âm lịch</div>
+      <div class="tab-sub" data-tab="c" onclick="switchTab('c')">Tứ Trụ</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB A: Solar ===== -->
+  <div class="card" id="panel-a">
+    <div class="form-title">A. Nhập theo Dương lịch</div>
+    <p class="form-desc fade-hint">Áp dụng lịch Việt Nam (múi giờ UTC+7). Năm hỗ trợ: 1900–2050.</p>
+    <div class="grid">
+      <div class="field"><label>Năm</label><input type="number" id="a-year" min="1900" max="2050" value="1987"></div>
+      <div class="field"><label>Tháng</label>
+        <select id="a-month"></select>
+      </div>
+      <div class="field"><label>Ngày</label>
+        <select id="a-day"></select>
+      </div>
+      <div class="field"><label>Giờ</label>
+        <select id="a-hour"></select>
+      </div>
+      <div class="field"><label>Phút</label>
+        <select id="a-minute"></select>
+      </div>
+      <div class="field"><label>Giới tính</label>
+        <select id="a-gender"><option value="nam">Nam</option><option value="nu">Nữ</option></select>
+      </div>
+    </div>
+
+    <div class="warn-box" id="warn-a">
+      <div class="warn-head">⚠ Giờ Tý — cần cân nhắc trước khi dự đoán</div>
+      <p>Giờ Tý (23:00–00:59) trải qua ranh giới 2 ngày âm lịch. Có hai trường phái tính Trụ Ngày khác nhau khi sinh trong khoảng 23:00–23:59:</p>
+      <div class="radio-row">
+        <label class="radio-opt"><input type="radio" name="tyzi-a" value="same"> Tính theo <b>ngày hiện tại</b> (phổ biến hơn)</label>
+        <label class="radio-opt"><input type="radio" name="tyzi-a" value="next" checked> Tính theo <b>ngày hôm sau</b> (phái Vãn Tý)</label>
+      </div>
+      <p style="margin-top:10px;color:#e8a89f;">Hai cách sẽ cho ra Trụ Ngày khác nhau → ảnh hưởng toàn bộ luận đoán. Nên đối chiếu với thầy/tài liệu bạn tin cậy trước khi dùng kết quả.</p>
+    </div>
+
+    <div class="divider"></div>
+    <div class="btn-main-wrap">
+      <button class="btn-main" onclick="showLoading(calcFromSolar)" aria-label="Lập Tứ Trụ" title="Lập Tứ Trụ">
+        <svg class="handicon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#f1e8d6"/>
+          <g class="thumb">
+            <rect x="9" y="58" width="28" height="12" rx="6" fill="#1b191e" transform="rotate(45 37 64)"/>
+          </g>
+          <rect fill="#1b191e" x="30" y="52" width="40" height="34" rx="14"/>
+          <rect class="finger finger-1" fill="#1b191e" x="33" y="20" width="8" height="34" rx="4"/>
+          <rect class="finger finger-2" fill="#1b191e" x="43" y="12" width="8" height="42" rx="4"/>
+          <rect class="finger finger-3" fill="#1b191e" x="53" y="16" width="8" height="38" rx="4"/>
+          <rect class="finger finger-4" fill="#1b191e" x="63" y="26" width="7" height="28" rx="3.5"/>
+        </svg>
+      </button>
+      <span class="btn-main-caption">Lập Tứ Trụ</span>
+    </div>
+  </div>
+
+  <!-- ===== TAB B: Lunar ===== -->
+  <div class="card" id="panel-b" style="display:none;">
+    <div class="form-title">B. Nhập theo Âm lịch</div>
+    <p class="form-desc fade-hint">Nhập ngày tháng năm âm lịch Việt Nam. Năm hỗ trợ: 1900–2050.</p>
+    <div class="grid">
+      <div class="field"><label>Năm âm</label><input type="number" id="b-year" min="1900" max="2050" value="1990"></div>
+      <div class="field"><label>Tháng âm</label>
+        <select id="b-month"></select>
+      </div>
+      <div class="field"><label>Ngày âm</label>
+        <select id="b-day"></select>
+      </div>
+      <div class="field">
+        <label>Tháng nhuận?</label>
+        <select id="b-leap"><option value="0">Không</option><option value="1">Có (tháng nhuận)</option></select>
+      </div>
+      <div class="field"><label>Giờ</label>
+        <select id="b-hour"></select>
+      </div>
+      <div class="field"><label>Phút</label>
+        <select id="b-minute"></select>
+      </div>
+      <div class="field"><label>Giới tính</label>
+        <select id="b-gender"><option value="nam">Nam</option><option value="nu">Nữ</option></select>
+      </div>
+    </div>
+
+    <div class="warn-box" id="warn-b">
+      <div class="warn-head">⚠ Giờ Tý — cần cân nhắc trước khi dự đoán</div>
+      <p>Giờ Tý (23:00–00:59) trải qua ranh giới 2 ngày âm lịch. Có hai trường phái tính Trụ Ngày khác nhau khi sinh trong khoảng 23:00–23:59:</p>
+      <div class="radio-row">
+        <label class="radio-opt"><input type="radio" name="tyzi-b" value="same"> Tính theo <b>ngày hiện tại</b> (phổ biến hơn)</label>
+        <label class="radio-opt"><input type="radio" name="tyzi-b" value="next" checked> Tính theo <b>ngày hôm sau</b> (phái Vãn Tý)</label>
+      </div>
+      <p style="margin-top:10px;color:#e8a89f;">Hai cách sẽ cho ra Trụ Ngày khác nhau → ảnh hưởng toàn bộ luận đoán. Nên đối chiếu với thầy/tài liệu bạn tin cậy trước khi dùng kết quả.</p>
+    </div>
+
+    <div class="divider"></div>
+    <div class="btn-main-wrap">
+      <button class="btn-main" onclick="showLoading(calcFromLunar)" aria-label="Lập Tứ Trụ" title="Lập Tứ Trụ">
+        <svg class="handicon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#f1e8d6"/>
+          <g class="thumb">
+            <rect x="9" y="58" width="28" height="12" rx="6" fill="#1b191e" transform="rotate(45 37 64)"/>
+          </g>
+          <rect fill="#1b191e" x="30" y="52" width="40" height="34" rx="14"/>
+          <rect class="finger finger-1" fill="#1b191e" x="33" y="20" width="8" height="34" rx="4"/>
+          <rect class="finger finger-2" fill="#1b191e" x="43" y="12" width="8" height="42" rx="4"/>
+          <rect class="finger finger-3" fill="#1b191e" x="53" y="16" width="8" height="38" rx="4"/>
+          <rect class="finger finger-4" fill="#1b191e" x="63" y="26" width="7" height="28" rx="3.5"/>
+        </svg>
+      </button>
+      <span class="btn-main-caption">Lập Tứ Trụ</span>
+    </div>
+  </div>
+
+  <!-- ===== TAB C: Direct ===== -->
+  <div class="card" id="panel-c" style="display:none;">
+    <div class="form-title">C. Nhập Tứ Trụ đã biết</div>
+    <p class="form-desc fade-hint">Dùng khi bạn đã có sẵn Can Chi của 4 trụ (bỏ qua bước tính lịch).</p>
+    <p class="form-desc fade-hint" style="margin-top:-14px;">Mỗi trụ chỉ có 60 tổ hợp Can Chi hợp lệ (lục thập hoa giáp) — chọn thẳng cặp Can Chi để tránh nhập sai.</p>
+    <div class="grid">
+      <div class="field field-full"><label>Trụ năm</label><select id="c-year"></select></div>
+      <div class="field field-full"><label>Trụ tháng</label><select id="c-month"></select></div>
+      <div class="field field-full"><label>Trụ ngày</label><select id="c-day"></select></div>
+      <div class="field field-full"><label>Trụ giờ</label><select id="c-hour"></select></div>
+      <div class="field"><label>Giới tính</label>
+        <select id="c-gender"><option value="nam">Nam</option><option value="nu">Nữ</option></select>
+      </div>
+    </div>
+
+    <div class="warn-box" id="warn-c">
+      <div class="warn-head">⚠ Chi giờ là Tý — cần cân nhắc trước khi dự đoán</div>
+      <p>Chi giờ Tý trải qua ranh giới ngày âm lịch. Hãy chắc chắn Trụ Ngày bạn nhập đã theo đúng quy ước (ngày hiện tại hay ngày hôm sau) mà nguồn dữ liệu gốc sử dụng.</p>
+    </div>
+
+    <div class="divider"></div>
+    <div class="btn-main-wrap">
+      <button class="btn-main" onclick="showLoading(calcFromDirect)" aria-label="Hiển Thị Tứ Trụ" title="Hiển Thị Tứ Trụ">
+        <svg class="handicon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#f1e8d6"/>
+          <g class="thumb">
+            <rect x="9" y="58" width="28" height="12" rx="6" fill="#1b191e" transform="rotate(45 37 64)"/>
+          </g>
+          <rect fill="#1b191e" x="30" y="52" width="40" height="34" rx="14"/>
+          <rect class="finger finger-1" fill="#1b191e" x="33" y="20" width="8" height="34" rx="4"/>
+          <rect class="finger finger-2" fill="#1b191e" x="43" y="12" width="8" height="42" rx="4"/>
+          <rect class="finger finger-3" fill="#1b191e" x="53" y="16" width="8" height="38" rx="4"/>
+          <rect class="finger finger-4" fill="#1b191e" x="63" y="26" width="7" height="28" rx="3.5"/>
+        </svg>
+      </button>
+      <span class="btn-main-caption">Hiển Thị Tứ Trụ</span>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div id="results">
+    <div class="result-head">
+      <div class="eyebrow">Phần 2 — Kết quả</div>
+      <h2>Tứ Trụ Của Bạn</h2>
+    </div>
+    <p class="form-desc" style="text-align:center;">2.1 — Bảng Tứ Trụ</p>
+    <div class="bday-strip" id="bday-strip"></div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-label">Trụ Năm</div>
+        <div class="pillar-top" id="p-year-top"></div>
+        <div class="hr-brass"></div>
+        <div class="pillar-mid" id="p-year-mid"></div>
+        <div class="pillar-bottom" id="p-year-bottom"></div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">Trụ Tháng</div>
+        <div class="pillar-top" id="p-month-top"></div>
+        <div class="hr-brass"></div>
+        <div class="pillar-mid" id="p-month-mid"></div>
+        <div class="pillar-bottom" id="p-month-bottom"></div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">Trụ Ngày</div>
+        <div class="pillar-top" id="p-day-top"></div>
+        <div class="hr-brass"></div>
+        <div class="pillar-mid" id="p-day-mid"></div>
+        <div class="pillar-bottom" id="p-day-bottom"></div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">Trụ Giờ</div>
+        <div class="pillar-top" id="p-hour-top"></div>
+        <div class="hr-brass"></div>
+        <div class="pillar-mid" id="p-hour-mid"></div>
+        <div class="pillar-bottom" id="p-hour-bottom"></div>
+      </div>
+    </div>
+
+    <div class="confirm-box">
+      <p>Kiểm tra lại Tứ Trụ vừa lập — đã đúng với ngày giờ sinh của bạn chưa?</p>
+      <div class="confirm-actions">
+        <button class="btn-yes" onclick="confirmYes()"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Đúng rồi, tiếp tục</button>
+        <button class="btn-no" onclick="confirmNo()"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Chưa đúng, nhập lại</button>
+        <button class="btn-no" id="copy-result-btn" onclick="copyResult()"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Sao chép kết quả</button>
+      </div>
+      <div class="next-note" id="next-note">
+        Đã ghi nhận. Kéo xuống để xem phân tích Nhật Nguyên, dụng thần, đại vận, lưu niên và các dự đoán chi tiết bên dưới.
+      </div>
+    </div>
+
+    <div class="card wide-card" id="panel-hopxung">
+      <div class="form-title">2.2 — Hợp · Xung · Hình · Hại Giữa Các Trụ</div>
+      <div id="hopxung-content" class="analysis-body"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-strength">
+      <div class="form-title">2.3 — Nhật Nguyên: Phân Tích Vượng / Nhược</div>
+      <div id="strength-content" class="analysis-body"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-dungthan">
+      <div class="form-title">2.4 — Dụng Thần · Hỷ Thần · Kỵ Thần</div>
+      <div id="dungthan-content" class="analysis-body"></div>
+      <div id="thansat-content" class="analysis-body" style="margin-top:18px;border-top:1px dashed rgba(198,160,76,0.2);padding-top:16px;"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-daivan">
+      <div class="form-title">2.5 — Đại Vận &amp; Lưu Niên</div>
+      <div id="daivan-content" class="analysis-body"></div>
+      <div id="luunien-content" class="analysis-body" style="margin-top:22px;"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-specialyears">
+      <div class="form-title">2.6 — Những Năm Đáng Chú Ý</div>
+      <div id="specialyears-content" class="analysis-body"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-categories">
+      <div class="form-title">2.7 — Dự Đoán Theo Từng Mục</div>
+      <div id="categories-content" class="analysis-body"></div>
+    </div>
+
+    <div class="card wide-card" id="panel-advice">
+      <div class="form-title">2.8 — Tư Vấn Tổng Hợp</div>
+      <div id="advice-content" class="analysis-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="fade-hint">Bản quyền của 13hung.c4ch5</footer>
+
+<div class="loading-overlay" id="loading-overlay">
+  <svg class="handicon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#f1e8d6"/>
+          <g class="thumb">
+            <rect x="9" y="58" width="28" height="12" rx="6" fill="#1b191e" transform="rotate(45 37 64)"/>
+          </g>
+          <rect fill="#1b191e" x="30" y="52" width="40" height="34" rx="14"/>
+          <rect class="finger finger-1" fill="#1b191e" x="33" y="20" width="8" height="34" rx="4"/>
+          <rect class="finger finger-2" fill="#1b191e" x="43" y="12" width="8" height="42" rx="4"/>
+          <rect class="finger finger-3" fill="#1b191e" x="53" y="16" width="8" height="38" rx="4"/>
+          <rect class="finger finger-4" fill="#1b191e" x="63" y="26" width="7" height="28" rx="3.5"/>
+        </svg>
+  <div class="loading-text">Đang lập Tứ Trụ...</div>
+</div>
+
+
+<script src="js/01-lunar-calendar.js"></script>
+<script src="js/02-canchi-data.js"></script>
+<script src="js/03-bazi-engine.js"></script>
+<script src="js/04-render-pillars.js"></script>
+<script src="js/05-handlers.js"></script>
+<script src="js/06-tabs.js"></script>
+<script src="js/07-init-selects.js"></script>
+<script src="js/08-phase2-strength.js"></script>
+<script src="js/09-phase2-daivan.js"></script>
+<script src="js/10-phase2-categories.js"></script>
+<script src="js/11-phase2-hopxunghinhhai.js"></script>
+</body>
+</html>
