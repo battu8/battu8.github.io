@@ -1,6 +1,6 @@
 function tallyTenGodGroups(data){
   const dm = data.day.can;
-  const g = {tyKiep:0, an:0, thucThuong:0, tai:0, quanSat:0};
+  const g = {tyKiep:0, an:0, thucThuong:0, tai:0, quanSat:0, chinhQuan:0, thatSat:0};
   function classify(canIdx,w){
     if(canIdx===dm) return;
     const t = tenGod(dm,canIdx);
@@ -8,7 +8,8 @@ function tallyTenGodGroups(data){
     else if(t==="Kiêu Thần"||t==="Chính Ấn") g.an+=w;
     else if(t==="Thực Thần"||t==="Thương Quan") g.thucThuong+=w;
     else if(t==="Thiên Tài"||t==="Chính Tài") g.tai+=w;
-    else if(t==="Thất Sát"||t==="Chính Quan") g.quanSat+=w;
+    else if(t==="Thất Sát"){ g.quanSat+=w; g.thatSat+=w; }
+    else if(t==="Chính Quan"){ g.quanSat+=w; g.chinhQuan+=w; }
   }
   classify(data.year.can,1); classify(data.month.can,1); classify(data.hour.can,1);
   [[data.year.chi,1],[data.month.chi,1.5],[data.day.chi,1],[data.hour.chi,1]].forEach(([chi,mult])=>{
@@ -36,7 +37,20 @@ function renderCategories(data, gender, strength, dungThan){
   html += `<div class="category-block"><h4>Tính cách</h4><p>Thập Thần nổi bật nhất trong lá số là <b>${labelMap[dominant]}</b>, cho thấy xu hướng ${personalityMap[dominant]}</p></div>`;
 
   if(gender==='nam'){
-    html += `<div class="category-block"><h4>Vợ / Con cái</h4><p>Sao Tài tinh (tượng trưng vợ) ở mức <b>${taiLevel}</b>${g.tai===0?" (không xuất hiện rõ trong Tứ Trụ)":""}. Sao Thực Thương (tượng trưng con cái) ở mức <b>${thucLevel}</b>. ${taiLevel==='yếu'?"Cần chủ động vun đắp tình cảm gia đình nhiều hơn.":"Duyên vợ chồng khá rõ nét trong lá số."}</p></div>`;
+    // §16.2: với cha (nam mệnh), Thất Sát thiên về con trai, Chính Quan thiên về con gái.
+    const chinhQuan = g.chinhQuan||0, thatSat = g.thatSat||0;
+    let traiGaiNote;
+    if(chinhQuan===0 && thatSat===0){
+      traiGaiNote = 'Không có Quan hay Sát nào nổi bật trong lá số để nghiêng về bên nào.';
+    } else if(thatSat>chinhQuan){
+      traiGaiNote = `Thất Sát trội hơn Chính Quan (${thatSat.toFixed(1)} so với ${chinhQuan.toFixed(1)}) — theo kỹ thuật §16.2, thiên hướng dễ có con trai hơn.`;
+    } else if(chinhQuan>thatSat){
+      traiGaiNote = `Chính Quan trội hơn Thất Sát (${chinhQuan.toFixed(1)} so với ${thatSat.toFixed(1)}) — theo kỹ thuật §16.2, thiên hướng dễ có con gái hơn.`;
+    } else {
+      traiGaiNote = `Chính Quan và Thất Sát ngang nhau — không nghiêng rõ về bên nào.`;
+    }
+    html += `<div class="category-block"><h4>Vợ</h4><p>Sao Tài tinh (tượng trưng vợ) ở mức <b>${taiLevel}</b>${g.tai===0?" (không xuất hiện rõ trong Tứ Trụ)":""}. ${taiLevel==='yếu'?"Cần chủ động vun đắp tình cảm gia đình nhiều hơn.":"Duyên vợ chồng khá rõ nét trong lá số."}</p></div>`;
+    html += `<div class="category-block"><h4>Con cái</h4><p>Với nam mệnh, sao Quan Sát (không phải Thực Thương) đại diện cho con cái — hiện ở mức <b>${quanLevel}</b>${g.quanSat===0?" (không xuất hiện rõ trong Tứ Trụ)":""}. ${traiGaiNote}</p></div>`;
   } else {
     html += `<div class="category-block"><h4>Chồng / Con cái</h4><p>Sao Quan Sát (tượng trưng chồng) ở mức <b>${quanLevel}</b>${g.quanSat===0?" (không xuất hiện rõ trong Tứ Trụ)":""}. Sao Thực Thương (tượng trưng con cái) ở mức <b>${thucLevel}</b>.</p></div>`;
   }
@@ -59,7 +73,7 @@ function renderCategories(data, gender, strength, dungThan){
 
   html += `<div class="category-block"><h4>Học tập</h4><p>Ấn tinh (đại diện học vấn, quý nhân) ở mức <b>${anLevel}</b>. ${anLevel==='mạnh'? "Có duyên với học hành, dễ được thầy cô/quý nhân nâng đỡ." : "Việc học cần sự kiên trì chủ động hơn là dựa vào yếu tố may mắn/quý nhân."}</p></div>`;
 
-  document.getElementById('categories-content').innerHTML = html + `<div class="disclaimer">Các nhận định trên được suy ra tự động từ cấu trúc Thập Thần trong lá số, mang tính tham khảo phổ thông — không thay thế cho việc luận giải trực tiếp bởi người có chuyên môn.</div>`;
+  document.getElementById('categories-content').innerHTML = html + `<div class="disclaimer">Các nhận định trên được suy ra tự động từ cấu trúc Thập Thần trong lá số, mang tính tham khảo phổ thông — không thay thế cho việc luận giải trực tiếp bởi người có chuyên môn. Riêng kỹ thuật nghiêng trai/gái ở mục Con cái (§16.2) là một kỹ thuật cụ thể tác giả tài liệu tự nhận đã kiểm chứng qua khoảng 250 ca — không phải quy tắc được mọi trường phái Tứ Trụ công nhận thống nhất, nên chỉ mang tính tham khảo thêm, không phải căn cứ để khẳng định giới tính con.</div>`;
 }
 
 const ELEMENT_ADVICE = {
@@ -88,8 +102,11 @@ function renderPhase2(data, manual){
   const gender = document.getElementById('p-gender').value;
   const name = document.getElementById('p-name').value.trim();
   const strength = renderStrength(data, manual);
+  renderTruongSinh(data, strength);
+  renderChinhCach(data, strength);
   const dungThan = renderDungThan(data, strength);
   renderHopXungHinhHai(data, dungThan);
+  renderThaiNguyenCungMenh(data, strength, dungThan);
   renderThanSat(data, strength);
   const meta = renderDaiVanLuuNien(data, gender, manual, dungThan);
   renderSpecialYears(data, dungThan, meta);
