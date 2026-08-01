@@ -37,41 +37,63 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
   const currentAge = predictYear - birthYear;
 
   let dvRows='';
+  let currentDvCat = null;
   dv.list.forEach((p,i)=>{
     const endAge = p.startAge+9;
     const isCurrent = currentAge>=p.startAge && currentAge<=endAge;
-    dvRows += `<tr class="${isCurrent?'current-row':''}"><td>${i+1}</td><td>${p.startAge}${i===0&&p.startMonths?'.'+p.startMonths+'th':''}–${endAge} tuổi</td><td>${CAN[p.can]} ${CHI[p.chi]}</td><td>${napAmOf(p.can,p.chi)}</td></tr>`;
+    const cat = danhGiaCatHungVan(p.can, p.chi, data, dungThan);
+    if(isCurrent) currentDvCat = cat;
+    dvRows += `<tr class="${isCurrent?'current-row':''}"><td>${i+1}</td><td>${p.startAge}${i===0&&p.startMonths?'.'+p.startMonths+'th':''}–${endAge} tuổi</td><td>${CAN[p.can]} ${CHI[p.chi]}</td><td>${napAmOf(p.can,p.chi)}</td><td>${catHungTag(cat.level,cat.label)}</td></tr>`;
   });
+  let currentDvNote = '';
+  if(currentDvCat && currentDvCat.notes.length){
+    currentDvNote = `<p style="margin-top:10px;font-size:0.92em;">Chi tiết đại vận hiện tại: ${currentDvCat.notes.join('; ')}.</p>`;
+  }
+  const phucPhanDv = currentDvCat ? kiemTraPhucPhanNgam(dv.list.find(p=>currentAge>=p.startAge&&currentAge<=p.startAge+9)?.can, dv.list.find(p=>currentAge>=p.startAge&&currentAge<=p.startAge+9)?.chi, data) : [];
+  const phucPhanDvHtml = phucPhanDv.length ? `<p style="margin-top:8px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Đại vận hiện tại ${phucPhanDv.map(f=>f.text).join('; ')} — đây là giai đoạn tài liệu khuyến nghị nên đặc biệt thận trọng, không phải điềm báo chắc chắn (xem ghi chú cuối mục).</p>` : '';
   document.getElementById('daivan-content').innerHTML = `
     <p>Hướng đi: <b>${dv.forward? "Thuận hành":"Nghịch hành"}</b> (${gender==="nam"?"Nam mệnh":"Nữ mệnh"}, năm sinh Can ${CAN[data.year.can]} thuộc ${data.year.can%2===0?"Dương":"Âm"}) — nhập vận lúc <b>${dv.startYears} tuổi ${dv.startMonths} tháng</b>.</p>
     <div class="table-scroll"><table class="data-table">
-      <tr><th>#</th><th>Giai đoạn</th><th>Can Chi</th><th>Nạp Âm</th></tr>
+      <tr><th>#</th><th>Giai đoạn</th><th>Can Chi</th><th>Nạp Âm</th><th>Cát hung</th></tr>
       ${dvRows}
-    </table></div>`;
+    </table></div>
+    ${currentDvNote}${phucPhanDvHtml}`;
 
   const centerYear = predictYear;
   let lnRows='';
+  let centerCat = null;
   for(let y=centerYear-7; y<=centerYear+7; y++){
     const can = ((y+6)%10+10)%10;
     const chi = ((y+8)%12+12)%12;
     const age = y - birthYear;
     const isCurrent = (y===centerYear);
-    let tagHtml='';
-    const elemY = elementOfCan(can);
-    if(elemY===dungThan.dungThan) tagHtml='<span class="tag tag-good">Dụng Thần</span>';
-    else if(elemY===dungThan.kyThan) tagHtml='<span class="tag tag-bad">Kỵ Thần</span>';
-    lnRows += `<tr class="${isCurrent?'current-row':''}"><td>${age}</td><td>${y}</td><td>${CAN[can]} ${CHI[chi]}</td><td>${tagHtml}</td></tr>`;
+    const cat = danhGiaCatHungVan(can, chi, data, dungThan);
+    if(isCurrent) centerCat = cat;
+    lnRows += `<tr class="${isCurrent?'current-row':''}"><td>${age}</td><td>${y}</td><td>${CAN[can]} ${CHI[chi]}</td><td>${catHungTag(cat.level,cat.label)}</td></tr>`;
+  }
+  let tongHopHtml = '';
+  if(currentDvCat && centerCat){
+    const key = `${currentDvCat.label}-${centerCat.label}`;
+    const ketQua = BANG_TONG_HOP_DV_LN[key] || 'Bình thường';
+    tongHopHtml = `<p style="margin-top:10px;"><b>Nhận định tổng hợp năm ${centerYear}</b> (§11.3): Đại Vận <b>${currentDvCat.label}</b> × Lưu Niên <b>${centerCat.label}</b> → <b>${ketQua}</b>.</p>`;
+    if(centerCat.notes.length) tongHopHtml += `<p style="font-size:0.92em;">Chi tiết lưu niên ${centerYear}: ${centerCat.notes.join('; ')}.</p>`;
+    const phucPhanLn = kiemTraPhucPhanNgam(can2(centerYear), chi2(centerYear), data);
+    if(phucPhanLn.length) tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Lưu niên ${centerYear} ${phucPhanLn.map(f=>f.text).join('; ')} — nên thận trọng hơn, không phải điềm báo chắc chắn.</p>`;
   }
   document.getElementById('luunien-content').innerHTML = `
     <h4>Lưu Niên quanh năm dự đoán (${centerYear})</h4>
     <div class="table-scroll"><table class="data-table">
-      <tr><th>Tuổi</th><th>Năm</th><th>Can Chi</th><th>Ghi chú</th></tr>
+      <tr><th>Tuổi</th><th>Năm</th><th>Can Chi</th><th>Cát hung</th></tr>
       ${lnRows}
     </table></div>
-    <p style="margin-top:8px;font-size:12px;">Đổi "Ngày dự đoán" ở Phần 1 rồi bấm lại "Lập Tứ Trụ" để xem lưu niên quanh năm khác.</p>`;
+    ${tongHopHtml}
+    <p style="margin-top:8px;font-size:12px;">Đổi "Ngày dự đoán" ở Phần 1 rồi bấm lại "Lập Tứ Trụ" để xem lưu niên quanh năm khác.</p>
+    <div class="disclaimer">Đánh giá Cát Hung (§11.3–11.4) tính từ: can vận có thuộc Dụng/Hỷ/Kỵ Thần hay không, có xung/hợp làm mất Dụng/Hỷ/Kỵ Thần trong mệnh cục hay không, và có Thiên Khắc Địa Xung với trụ nào không — đây là một cách quy đổi tương đối, <b>không thay thế</b> việc luận hạn chi tiết theo từng lưu nguyệt của người có chuyên môn. Các ghi chú "Phục Ngâm/Phản Ngâm" (§11.6) chỉ nêu để tham khảo thận trọng hơn ở giai đoạn đó — tài liệu gốc nêu rõ đây không phải quy luật tuyệt đối, thực tế còn tùy mệnh cục cân bằng hay không và trùng vào thần sát tốt hay xấu; công cụ này không đưa ra bất kỳ dự đoán nào về sức khỏe/an toàn tính mạng.</div>`;
 
   return {dv, birthYear, predictYear, currentAge};
 }
+function can2(y){ return ((y+6)%10+10)%10; }
+function chi2(y){ return ((y+8)%12+12)%12; }
 
 function renderSpecialYears(data, dungThan, meta){
   if(!meta){
