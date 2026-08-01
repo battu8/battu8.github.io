@@ -13,6 +13,24 @@ function elemWealth(e){ return (e+2)%5; }     // ta khắc (Tài)
 function elemAuthority(e){ return (e+3)%5; }  // khắc ta (Quan Sát)
 function controls(a,b){ return elemWealth(a)===b; } // a khắc b
 
+/* ---- Vượng-Tướng-Hưu-Tù-Tử (tài liệu "Âm Dương Ngũ Hành..." — Phần B §6) ----
+   "Cương lĩnh để đoán mệnh": 5 trạng thái của MỖI hành so với hành đang
+   đương lệnh tháng (lenhElem = Vượng). Đây là bước đo lực đầu tiên, trước
+   cả 12 cung Trường Sinh — dùng để thay cho hệ số ±20% (2 bậc) cũ, nay
+   tách đủ 5 bậc cho sát tài liệu hơn:
+     Vượng (đương lệnh)      — cực thịnh, đương quyền       → hệ số mạnh nhất
+     Tướng (con của Vượng)   — thịnh nhì, được Vượng sinh    → khá mạnh
+     Hưu   (mẹ của Vượng)    — đã sinh Vượng rồi lui, an nhàn → trung tính
+     Tù    (bị Vượng khắc)   — như tù binh, không phản kháng  → yếu
+     Tử    (khắc Vượng)      — phản khắc lại, tổn hại nặng nhất → yếu nhất */
+function classifyVTHTT(elem, lenhElem){
+  if(elem===lenhElem) return {state:'Vượng', mult:1.3};
+  if(elem===elemOutput(lenhElem)) return {state:'Tướng', mult:1.15};
+  if(elem===elemResource(lenhElem)) return {state:'Hưu', mult:1.0};
+  if(elem===elemWealth(lenhElem)) return {state:'Tù', mult:0.85};
+  return {state:'Tử', mult:0.7}; // elem === elemAuthority(lenhElem)
+}
+
 /* ---- §8.2: hệ tính điểm độ số theo tài liệu tự học ----
    Giản lược có chủ đích ở 2 chỗ (sẽ ghi rõ trong disclaimer):
    1) Bỏ qua Ngũ hợp hóa Thiên Can (điều kiện "hóa thành công" khó xác định tự động đáng tin cậy).
@@ -101,9 +119,9 @@ function lenhThangInfo(data, manual){
 function applyLenhThang(canDeg, chiDeg, cans, chis, lenh){
   for(let p=0;p<4;p++){
     const canE = elementOfCan(cans[p]);
-    if(canE===lenh.lenhElem) canDeg[p] *= 1.2; else if(canE===lenh.khacElem) canDeg[p] *= 0.8;
+    canDeg[p] *= classifyVTHTT(canE, lenh.lenhElem).mult;
     const chiE = ELEMENT_OF_CHI[chis[p]];
-    if(chiE===lenh.lenhElem) chiDeg[p] *= 1.2; else if(chiE===lenh.khacElem) chiDeg[p] *= 0.8;
+    chiDeg[p] *= classifyVTHTT(chiE, lenh.lenhElem).mult;
   }
 }
 
@@ -179,16 +197,23 @@ function renderStrength(data, manual){
   const rows = ELEMENT_NAMES.map((n,i)=>`<tr><td>${n}</td><td>${s.perElem[i].toFixed(1)}°</td></tr>`).join('');
   const boundaryNote = s.nearBoundary ? `<p style="color:var(--brass);">Tỷ lệ khá gần ranh giới 40% — mệnh cục thuộc dạng cân bằng, ít lệch cực đoan.</p>` : '';
   const extremeNote = (s.ratio>0.80 || s.ratio<0.20) ? `<div class="disclaimer">Tỷ lệ lệch rất mạnh về một phía — theo §9.2, lá số có thể rơi vào nhóm <b>Cách Cục Đặc Biệt (Tòng/Hóa cách)</b>, khi đó cách chọn dụng thần sẽ khác hẳn Chính cách thông thường. Trường hợp này nên được người có chuyên môn thẩm định thêm.</div>` : '';
+  const vthttRows = ELEMENT_NAMES.map((n,i)=>{
+    const c = classifyVTHTT(i, s.lenh.lenhElem);
+    const cls = c.state==='Vượng'||c.state==='Tướng' ? 'good' : (c.state==='Hưu' ? 'neutral' : 'bad');
+    return `<span class="tag tag-${cls}">${n}: ${c.state}</span>`;
+  }).join(' ');
   document.getElementById('strength-content').innerHTML = `
-    <p>Nhật Chủ: <b>${CAN[data.day.can]} (${ELEMENT_NAMES[s.dmElem]})</b> — Lệnh tháng hiện do hành <b>${ELEMENT_NAMES[s.lenh.lenhElem]}</b> nắm giữ.</p>
+    <p>Nhật Chủ: <b>${CAN[data.day.can]} (${ELEMENT_NAMES[s.dmElem]})</b> — Lệnh tháng hiện do hành <b>${ELEMENT_NAMES[s.lenh.lenhElem]}</b> nắm giữ (Vượng).</p>
+    <div style="margin:8px 0;">${vthttRows}</div>
+    <p style="font-size:0.9em;opacity:0.85;">Trạng thái Vượng-Tướng-Hưu-Tù-Tử (Phần B §6): "đương lệnh là Vượng; ta sinh là Tướng; sinh ta là Hưu; khắc ta là Tù; ta khắc [phản bị khắc] là Tử" — dùng làm hệ số nhân độ số bên dưới, thay vì chỉ xét 2 bậc Vượng/Tù như trước.</p>
     <div class="verdict-badge verdict-${s.verdict}">${verdictLabel}</div>
     <div class="bar-wrap"><div class="bar-support" style="width:${supportPct}%"></div><div class="bar-drain" style="width:${drainPct}%"></div></div>
     <div class="bar-legend"><span>Phe mình (Ấn+Tỷ/Kiếp): ${supportPct}%</span><span>Phe khác (Thực Thương+Tài+Quan Sát): ${drainPct}%</span></div>
     ${boundaryNote}
     <table class="data-table" style="margin-top:14px;"><tr><th>Ngũ Hành</th><th>Tổng độ số</th></tr>${rows}</table>
-    <p style="margin-top:14px;">Phương pháp: tính điểm theo độ số (§8.2) — Thiên Can gốc 36°/9° tùy có thông căn hay không, trừ theo bị khắc liền/cách/kẹp; Địa Chi gốc 30°, cộng/trừ theo Thiên Can cùng trụ và lục xung; toàn cục nhân hệ số ±1/5 theo hành đang nắm lệnh tháng (tính theo đúng thời điểm tiết khí). Ngưỡng phân loại: Phe mình ≥ 40% tổng cục → Thân Vượng, dưới 40% → Thân Nhược.</p>
+    <p style="margin-top:14px;">Phương pháp: tính điểm theo độ số (§8.2) — Thiên Can gốc 36°/9° tùy có thông căn hay không, trừ theo bị khắc liền/cách/kẹp; Địa Chi gốc 30°, cộng/trừ theo Thiên Can cùng trụ và lục xung; toàn cục nhân hệ số theo đúng 5 bậc Vượng-Tướng-Hưu-Tù-Tử (1.3 / 1.15 / 1.0 / 0.85 / 0.7) của hành đang nắm lệnh tháng (tính theo đúng thời điểm tiết khí). Ngưỡng phân loại: Phe mình ≥ 40% tổng cục → Thân Vượng, dưới 40% → Thân Nhược.</p>
     ${extremeNote}
-    <div class="disclaimer">Áp dụng theo tài liệu tự học Tứ Trụ đã cung cấp (§8.2), có 2 giản lược: bỏ qua Ngũ hợp hóa Thiên Can, và mỗi Địa Chi tính gộp một khối thay vì tách riêng tạp khí. Đây vẫn là một phương pháp trong nhiều trường phái Tứ Trụ — mang tính tham khảo.</div>`;
+    <div class="disclaimer">Áp dụng theo tài liệu tự học Tứ Trụ đã cung cấp (§8.2), có 2 giản lược: bỏ qua Ngũ hợp hóa Thiên Can, và mỗi Địa Chi tính gộp một khối thay vì tách riêng tạp khí. Hệ số Vượng-Tướng-Hưu-Tù-Tử được bổ sung theo tài liệu "Âm Dương Ngũ Hành — Thiên Can Địa Chi — Con Người" (Phần B §6); mức hệ số cụ thể (1.3/1.15/1.0/0.85/0.7) là quy đổi định lượng của riêng công cụ này từ nguyên tắc định tính "nghi khắc/nghi tiết" (Vượng-Tướng) và "nghi sinh/nghi phù" (Hưu-Tù-Tử) — tài liệu gốc không cho số cụ thể. Đây vẫn là một phương pháp trong nhiều trường phái Tứ Trụ — mang tính tham khảo.</div>`;
   return s;
 }
 
