@@ -202,6 +202,16 @@ function renderStrength(data, manual){
     const cls = c.state==='Vượng'||c.state==='Tướng' ? 'good' : (c.state==='Hưu' ? 'neutral' : 'bad');
     return `<span class="tag tag-${cls}">${n}: ${c.state}</span>`;
   }).join(' ');
+  const wellnessNote = (()=>{
+    const avg = s.perElem.reduce((a,b)=>a+b,0)/5;
+    let maxDev=-1, maxElem=-1;
+    s.perElem.forEach((v,i)=>{ const dev=Math.abs(v-avg); if(dev>maxDev){maxDev=dev; maxElem=i;} });
+    if(avg<=0 || maxDev/avg < 0.5){
+      return `<p style="font-size:0.9em;opacity:0.85;">Nhìn tổng thể, 5 hành trong lá số khá cân bằng, không có hành nào lệch quá rõ — không có tín hiệu gì đặc biệt cần lưu ý thêm ở khía cạnh này.</p>`;
+    }
+    const trang = s.perElem[maxElem] > avg ? 'vượng trội' : 'suy yếu nhất';
+    return `<p style="font-size:0.9em;opacity:0.85;">Trong 5 hành, <b>${ELEMENT_NAMES[maxElem]}</b> đang lệch rõ nhất so với mức trung bình (${trang}) — theo lý thuyết Ngũ Hành, sự mất cân bằng rõ rệt ở một hành thường được xem là dấu hiệu nên chú ý cân bằng nhịp sống, nghỉ ngơi và ăn uống điều độ hơn trong giai đoạn này; đây chỉ là một gợi ý chăm sóc bản thân nói chung, không gắn với bộ phận cơ thể hay bệnh lý cụ thể nào.</p>`;
+  })();
   document.getElementById('strength-content').innerHTML = `
     <p>Nhật Chủ: <b>${CAN[data.day.can]} (${ELEMENT_NAMES[s.dmElem]})</b> — Lệnh tháng hiện do hành <b>${ELEMENT_NAMES[s.lenh.lenhElem]}</b> nắm giữ (Vượng).</p>
     <div style="margin:8px 0;">${vthttRows}</div>
@@ -213,7 +223,8 @@ function renderStrength(data, manual){
     <table class="data-table" style="margin-top:14px;"><tr><th>Ngũ Hành</th><th>Tổng độ số</th></tr>${rows}</table>
     <p style="margin-top:14px;">Phương pháp: tính điểm theo độ số (§8.2) — Thiên Can gốc 36°/9° tùy có thông căn hay không, trừ theo bị khắc liền/cách/kẹp; Địa Chi gốc 30°, cộng/trừ theo Thiên Can cùng trụ và lục xung; toàn cục nhân hệ số theo đúng 5 bậc Vượng-Tướng-Hưu-Tù-Tử (1.3 / 1.15 / 1.0 / 0.85 / 0.7) của hành đang nắm lệnh tháng (tính theo đúng thời điểm tiết khí). Ngưỡng phân loại: Phe mình ≥ 40% tổng cục → Thân Vượng, dưới 40% → Thân Nhược.</p>
     ${extremeNote}
-    <div class="disclaimer">Áp dụng theo tài liệu tự học Tứ Trụ đã cung cấp (§8.2), có 2 giản lược: bỏ qua Ngũ hợp hóa Thiên Can, và mỗi Địa Chi tính gộp một khối thay vì tách riêng tạp khí. Hệ số Vượng-Tướng-Hưu-Tù-Tử được bổ sung theo tài liệu "Âm Dương Ngũ Hành — Thiên Can Địa Chi — Con Người" (Phần B §6); mức hệ số cụ thể (1.3/1.15/1.0/0.85/0.7) là quy đổi định lượng của riêng công cụ này từ nguyên tắc định tính "nghi khắc/nghi tiết" (Vượng-Tướng) và "nghi sinh/nghi phù" (Hưu-Tù-Tử) — tài liệu gốc không cho số cụ thể. Đây vẫn là một phương pháp trong nhiều trường phái Tứ Trụ — mang tính tham khảo.</div>`;
+    ${wellnessNote}
+    <div class="disclaimer">Áp dụng theo tài liệu tự học Tứ Trụ đã cung cấp (§8.2), có 2 giản lược: bỏ qua Ngũ hợp hóa Thiên Can, và mỗi Địa Chi tính gộp một khối thay vì tách riêng tạp khí. Hệ số Vượng-Tướng-Hưu-Tù-Tử được bổ sung theo tài liệu "Âm Dương Ngũ Hành — Thiên Can Địa Chi — Con Người" (Phần B §6); mức hệ số cụ thể (1.3/1.15/1.0/0.85/0.7) là quy đổi định lượng của riêng công cụ này từ nguyên tắc định tính "nghi khắc/nghi tiết" (Vượng-Tướng) và "nghi sinh/nghi phù" (Hưu-Tù-Tử) — tài liệu gốc không cho số cụ thể. Tín hiệu cân bằng nhịp sống ở trên chỉ mang tính tổng quát, không phải chẩn đoán — nếu có vấn đề sức khỏe thực sự, luôn nên hỏi ý kiến bác sĩ. Đây vẫn là một phương pháp trong nhiều trường phái Tứ Trụ — mang tính tham khảo.</div>`;
   return s;
 }
 
@@ -280,12 +291,18 @@ function renderThanSat(data, strength){
   const box = document.getElementById('thansat-content');
   if(!box) return;
   if(list.length===0){
-    box.innerHTML = `<h4>Thần Sát nổi bật</h4><p>Không thấy Thần Sát nào trong nhóm 5 sao trọng yếu (Thiên Ất Quý Nhân, Kình Dương, Đào Hoa, Dịch Mã, Nguyệt Đức) xuất hiện trong lá số này.</p>`;
+    box.innerHTML = `<h4>Thần Sát nổi bật</h4><p>Không thấy Thần Sát nào trong nhóm 5 sao trọng yếu (Thiên Ất Quý Nhân, Kình Dương, Đào Hoa, Dịch Mã, Nguyệt Đức) xuất hiện trong lá số này — đây là một lá số không có nhiều "điểm nhấn" phụ trợ, việc luận đoán nên dựa chủ yếu vào cấu trúc Ngũ Hành/Thập Thần ở các mục khác.</p>`;
     return;
   }
+  const goodCount = list.filter(it=>it.type==='good').length, badCount = list.filter(it=>it.type==='bad').length;
+  const summary = goodCount>badCount
+    ? `Lá số này xuất hiện <b>${list.length}</b> Thần Sát trong nhóm 5 sao trọng yếu, thiên về tích cực (${goodCount} sao tốt, ${badCount} sao cần lưu ý).`
+    : (badCount>goodCount
+      ? `Lá số này xuất hiện <b>${list.length}</b> Thần Sát trong nhóm 5 sao trọng yếu, có phần cần lưu ý nhiều hơn (${badCount} sao cần chú ý, ${goodCount} sao tốt).`
+      : `Lá số này xuất hiện <b>${list.length}</b> Thần Sát trong nhóm 5 sao trọng yếu, cân bằng giữa tốt và cần lưu ý.`);
   const rows = list.map(it=>`<span class="tag tag-${it.type==='good'?'good':(it.type==='bad'?'bad':'neutral')}">${it.name} (${it.pos})</span>`).join(' ');
   const details = list.map(it=>`<p><b>${it.name}</b> (${it.pos}): ${it.text}</p>`).join('');
-  box.innerHTML = `<h4>Thần Sát nổi bật</h4><div style="margin-bottom:8px;">${rows}</div>${details}
+  box.innerHTML = `<h4>Thần Sát nổi bật</h4><p>${summary}</p><div style="margin-bottom:8px;">${rows}</div>${details}
     <div class="disclaimer">Theo tài liệu: đây là nhóm Thần Sát được đánh giá đáng tin cậy nhất, nhưng vẫn chỉ là "tiêu chí phụ trợ" — không thay thế nguyên lý sinh khắc chế hóa và cân bằng vượng/nhược ở trên.</div>`;
 }
 

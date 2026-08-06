@@ -38,18 +38,19 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
 
   let dvRows='';
   let currentDvCat = null;
+  let currentDvPillar = null;
   dv.list.forEach((p,i)=>{
     const endAge = p.startAge+9;
     const isCurrent = currentAge>=p.startAge && currentAge<=endAge;
     const cat = danhGiaCatHungVan(p.can, p.chi, data, dungThan);
-    if(isCurrent) currentDvCat = cat;
+    if(isCurrent){ currentDvCat = cat; currentDvPillar = p; }
     dvRows += `<tr class="${isCurrent?'current-row':''}"><td>${i+1}</td><td>${p.startAge}${i===0&&p.startMonths?'.'+p.startMonths+'th':''}–${endAge} tuổi</td><td>${CAN[p.can]} ${CHI[p.chi]}</td><td>${napAmOf(p.can,p.chi)}</td><td>${catHungTag(cat.level,cat.label)}</td></tr>`;
   });
   let currentDvNote = '';
   if(currentDvCat && currentDvCat.notes.length){
     currentDvNote = `<p style="margin-top:10px;font-size:0.92em;">Chi tiết đại vận hiện tại: ${currentDvCat.notes.join('; ')}.</p>`;
   }
-  const phucPhanDv = currentDvCat ? kiemTraPhucPhanNgam(dv.list.find(p=>currentAge>=p.startAge&&currentAge<=p.startAge+9)?.can, dv.list.find(p=>currentAge>=p.startAge&&currentAge<=p.startAge+9)?.chi, data) : [];
+  const phucPhanDv = currentDvPillar ? kiemTraPhucPhanNgam(currentDvPillar.can, currentDvPillar.chi, data) : [];
   const phucPhanDvHtml = phucPhanDv.length ? `<p style="margin-top:8px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Đại vận hiện tại ${phucPhanDv.map(f=>f.text).join('; ')} — đây là giai đoạn tài liệu khuyến nghị nên đặc biệt thận trọng, không phải điềm báo chắc chắn (xem ghi chú cuối mục).</p>` : '';
   document.getElementById('daivan-content').innerHTML = `
     <p>Hướng đi: <b>${dv.forward? "Thuận hành":"Nghịch hành"}</b> (${gender==="nam"?"Nam mệnh":"Nữ mệnh"}, năm sinh Can ${CAN[data.year.can]} thuộc ${data.year.can%2===0?"Dương":"Âm"}) — nhập vận lúc <b>${dv.startYears} tuổi ${dv.startMonths} tháng</b>.</p>
@@ -79,6 +80,10 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
     if(centerCat.notes.length) tongHopHtml += `<p style="font-size:0.92em;">Chi tiết lưu niên ${centerYear}: ${centerCat.notes.join('; ')}.</p>`;
     const phucPhanLn = kiemTraPhucPhanNgam(can2(centerYear), chi2(centerYear), data);
     if(phucPhanLn.length) tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Lưu niên ${centerYear} ${phucPhanLn.map(f=>f.text).join('; ')} — nên thận trọng hơn, không phải điềm báo chắc chắn.</p>`;
+    if(currentDvPillar){
+      const nxn = kiemTraNhiXungNhat(currentDvPillar.chi, chi2(centerYear), data);
+      if(nxn) tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý — "Nhị Xung Nhất"</span> Đại Vận và Lưu Niên ${centerYear} cùng mang chi <b>${CHI[currentDvPillar.chi]}</b>, cùng xung vào chi <b>${CHI[nxn.chi]}</b> ở trụ ${nxn.pos} — theo tài liệu, lực xung khi 2 nguồn (Vận + Niên) cùng nhắm 1 điểm mạnh hơn hẳn xung 1-1 thông thường, nên đây là giai đoạn đáng chú ý cần đặc biệt thận trọng hơn, không phải điềm báo chắc chắn về điều gì cụ thể.</p>`;
+    }
   }
   document.getElementById('luunien-content').innerHTML = `
     <h4>Lưu Niên quanh năm dự đoán (${centerYear})</h4>
@@ -88,9 +93,9 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
     </table></div>
     ${tongHopHtml}
     <p style="margin-top:8px;font-size:12px;">Đổi "Ngày dự đoán" ở Phần 1 rồi bấm lại "Lập Tứ Trụ" để xem lưu niên quanh năm khác.</p>
-    <div class="disclaimer">Đánh giá Cát Hung (§11.3–11.4) tính từ: can vận có thuộc Dụng/Hỷ/Kỵ Thần hay không, có xung/hợp làm mất Dụng/Hỷ/Kỵ Thần trong mệnh cục hay không, và có Thiên Khắc Địa Xung với trụ nào không — đây là một cách quy đổi tương đối, <b>không thay thế</b> việc luận hạn chi tiết theo từng lưu nguyệt của người có chuyên môn. Các ghi chú "Phục Ngâm/Phản Ngâm" (§11.6) chỉ nêu để tham khảo thận trọng hơn ở giai đoạn đó — tài liệu gốc nêu rõ đây không phải quy luật tuyệt đối, thực tế còn tùy mệnh cục cân bằng hay không và trùng vào thần sát tốt hay xấu; công cụ này không đưa ra bất kỳ dự đoán nào về sức khỏe/an toàn tính mạng.</div>`;
+    <div class="disclaimer">Đánh giá Cát Hung (§11.3–11.4) tính từ: can vận có thuộc Dụng/Hỷ/Kỵ Thần hay không, có xung/hợp làm mất Dụng/Hỷ/Kỵ Thần trong mệnh cục hay không, có Thiên Khắc Địa Xung với trụ nào không, và có Khai Mộ/Khố (Thìn-Tuất-Sửu-Mùi bị xung/hình) giải phóng ra Dụng hay Kỵ Thần hay không (bổ sung theo tài liệu Mộ/Khố) — đây là một cách quy đổi tương đối, <b>không thay thế</b> việc luận hạn chi tiết theo từng lưu nguyệt của người có chuyên môn. Phần Nhập Mộ/Khố tĩnh (chi Thìn-Tuất-Sửu-Mùi sẵn có trong tứ trụ gốc, không cần vận tác động) chưa được tính vào đây, xem thêm ở mục 2.2. Các ghi chú "Phục Ngâm/Phản Ngâm" (§11.6) chỉ nêu để tham khảo thận trọng hơn ở giai đoạn đó — tài liệu gốc nêu rõ đây không phải quy luật tuyệt đối, thực tế còn tùy mệnh cục cân bằng hay không và trùng vào thần sát tốt hay xấu; công cụ này không đưa ra bất kỳ dự đoán nào về sức khỏe/an toàn tính mạng.</div>`;
 
-  return {dv, birthYear, predictYear, currentAge};
+  return {dv, birthYear, predictYear, currentAge, currentDvCat, centerCat};
 }
 function can2(y){ return ((y+6)%10+10)%10; }
 function chi2(y){ return ((y+8)%12+12)%12; }
@@ -121,7 +126,13 @@ function renderSpecialYears(data, dungThan, meta){
     return;
   }
   const rows = items.map(it=>`<tr><td>${it.y} (${it.age} tuổi)</td><td><span class="tag tag-${it.type}">${it.text}</span></td></tr>`).join('');
+  const badItems = items.filter(it=>it.type==='bad'), goodItems = items.filter(it=>it.type==='good');
+  let summary = `Trong 15 năm tới, có <b>${items.length}</b> mốc đáng chú ý`;
+  if(badItems.length && goodItems.length) summary += ` — ${badItems.length} năm cần thận trọng hơn (nổi bật nhất: năm ${badItems[0].y}, ${badItems[0].age} tuổi) và ${goodItems.length} năm khá thuận lợi.`;
+  else if(badItems.length) summary += `, đều nghiêng về hướng cần thận trọng hơn — đáng chú ý nhất là năm ${badItems[0].y} (${badItems[0].age} tuổi).`;
+  else summary += `, nhìn chung khá thuận lợi.`;
   document.getElementById('specialyears-content').innerHTML = `
+    <p>${summary}</p>
     <div class="table-scroll"><table class="data-table"><tr><th>Năm</th><th>Ghi chú</th></tr>${rows}</table></div>
     <div class="disclaimer">Các mốc trên dựa theo quy tắc Xung/Phạm Thái Tuế và đối chiếu Dụng/Kỵ Thần — chỉ mang tính tham khảo, không thay thế việc xem hạn chi tiết theo từng lưu nguyệt.</div>`;
 }
