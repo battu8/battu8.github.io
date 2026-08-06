@@ -134,10 +134,34 @@ const ELEMENT_ADVICE = {
   3:{color:"Trắng, Xám, Ánh kim", dir:"Tây, Tây Bắc", nums:"4, 9", jobs:"tài chính – ngân hàng, luật, cơ khí, kim hoàn, công nghệ chính xác"},
   4:{color:"Đen, Xanh dương đậm", dir:"Bắc", nums:"1, 6", jobs:"vận tải – logistics, du lịch, thương mại, truyền thông, ngoại giao, nghiên cứu"}
 };
-function renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta){
+// Tìm đặc điểm QUYẾT ĐỊNH NHẤT của lá số (nếu có) để dẫn dắt bài luận ngay từ đầu,
+// thay vì luôn mở đầu theo 1 khuôn cố định bất kể lá số có gì đặc biệt hay không.
+function xacDinhLinhHon(strength, specialCach, hopXung, meta){
+  if(specialCach && specialCach.length){
+    const c = specialCach[0];
+    return `Đây là một lá số khá đặc biệt — điểm mấu chốt nhất là khả năng thuộc <b>${c.name}</b> (${c.nhom}, §9.2): ${c.text} Nếu đúng là cách này, toàn bộ cách luận vượng/nhược và Dụng Thần theo Chính Cách ở các mục phía trên sẽ không còn áp dụng theo hướng thông thường nữa — nên xem lại ghi chú cảnh báo ở mục 2.4 trước khi đọc tiếp phần dưới đây.`;
+  }
+  if(strength.ratio>=0.80){
+    return `Đặc điểm nổi bật nhất của lá số này là Nhật Chủ <b>cực vượng</b> (Phe mình chiếm tới ${(strength.ratio*100).toFixed(0)}% tổng cục) — mức độ khá hiếm gặp, gần ranh giới cần cân nhắc Cách Cục Đặc Biệt dù công cụ chưa xác nhận đủ điều kiện thuần (xem mục 2.4). Toàn bộ phần dưới đây nên đọc trong bối cảnh một Thân rất mạnh, ưu tiên hàng đầu là tiết chế/khắc chế bớt hơn là bồi bổ thêm.`;
+  }
+  if(strength.ratio<=0.15){
+    return `Đặc điểm nổi bật nhất của lá số này là Nhật Chủ <b>cực nhược</b> (Phe mình chỉ chiếm ${(strength.ratio*100).toFixed(0)}% tổng cục) — mức độ khá hiếm gặp, gần ranh giới cần cân nhắc Cách Cục Đặc Biệt (Tòng) dù công cụ chưa xác nhận đủ điều kiện thuần (xem mục 2.4). Toàn bộ phần dưới đây nên đọc trong bối cảnh một Thân rất yếu, ưu tiên hàng đầu là sinh trợ/nương tựa hơn là chống chọi trực diện.`;
+  }
+  if(hopXung && Math.abs(hopXung.score) >= 4){
+    if(hopXung.score>0) return `Đặc điểm nổi bật nhất của lá số này nằm ở chính cấu trúc 4 trụ gốc: các can chi hợp lại với nhau khá chặt chẽ${hopXung.topHighlight?`, rõ nhất là ${hopXung.topHighlight}`:''} — đây là lá số có "gốc rễ" khá vững, ít xáo trộn nội tại, nên biến động cuộc đời phần lớn sẽ đến từ bên ngoài (Đại Vận/Lưu Niên) hơn là từ chính bản thân.`;
+    return `Đặc điểm nổi bật nhất của lá số này nằm ở chính cấu trúc 4 trụ gốc: có khá nhiều xung khắc đan xen giữa các trụ${hopXung.topHighlight?`, rõ nhất là ${hopXung.topHighlight}`:''} — đây là lá số có nội tại "rung lắc" ngay từ gốc, nên việc chủ động dung hòa các mối quan hệ/giai đoạn cuộc đời quan trọng hơn bình thường.`;
+  }
+  if(meta && meta.currentDvCat && meta.centerCat && meta.currentDvCat.label==='Xấu' && meta.centerCat.label==='Xấu'){
+    return `Đặc điểm đáng chú ý nhất ngay lúc này là bạn đang ở một giai đoạn khá thử thách — cả Đại Vận hiện tại lẫn năm ${meta.predictYear} đều được đánh giá ở mức cần thận trọng (xem chi tiết mục 2.7). Đây là điều nên cân nhắc hàng đầu trước khi đọc các mục còn lại.`;
+  }
+  return null;
+}
+
+function renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta, specialCach){
   const adv = ELEMENT_ADVICE[dungThan.dungThan];
   const g = tallyTenGodGroups(data, strength);
   const greeting = name ? `Gửi <b>${name}</b>: ` : '';
+  const linhHon = xacDinhLinhHon(strength, specialCach, hopXung, meta);
 
   // Sắc thái vượng/nhược theo mức độ, không chỉ nhị phân
   let mucDo;
@@ -146,8 +170,11 @@ function renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta){
   else if(strength.ratio>=0.35) mucDo = 'hơi nhược, chưa đến mức mất cân bằng';
   else mucDo = 'khá nhược, cần được bồi đắp nhiều';
 
+  // Đoạn 0 — Dẫn dắt bằng đặc điểm quyết định nhất (nếu có)
+  let p0 = linhHon ? `${greeting}${linhHon}` : '';
+
   // Đoạn 1 — Cốt lõi lá số
-  let p1 = `${greeting}Nhật Chủ mang hành <b>${ELEMENT_NAMES[strength.dmElem]}</b>, xét theo cách tính điểm độ số thì đang ở trạng thái ${mucDo} (Phe mình chiếm ${(strength.ratio*100).toFixed(0)}% tổng cục). Lá số thuộc cách cục <b>${cachCuc.name}</b>, và hành được chọn làm Dụng Thần là <b>${ELEMENT_NAMES[dungThan.dungThan]}</b>${dungThan.hyThan!==dungThan.dungThan?` (Hỷ Thần đi kèm là ${ELEMENT_NAMES[dungThan.hyThan]})`:''} — đây là hành nên được nuôi dưỡng, ưu tiên trong mọi lựa chọn lớn nhỏ của cuộc sống, trong khi hành <b>${ELEMENT_NAMES[dungThan.kyThan]}</b> (Kỵ Thần) nên được hạn chế bớt. Cổ thư có câu "Dụng Thần là thuốc, Hỷ Thần là người giúp, Kỵ Thần là bệnh" — Dụng Thần thuộc nhóm <b>${nhomThapThanCuaHanh(strength.dmElem, dungThan.dungThan)}</b>, người ${THAP_THAN_GROUP_QUOTES[nhomThapThanCuaHanh(strength.dmElem, dungThan.dungThan)]||''}`;
+  let p1 = `${p0?'':greeting}Nhật Chủ mang hành <b>${ELEMENT_NAMES[strength.dmElem]}</b>, xét theo cách tính điểm độ số thì đang ở trạng thái ${mucDo} (Phe mình chiếm ${(strength.ratio*100).toFixed(0)}% tổng cục). Lá số thuộc cách cục <b>${cachCuc.name}</b>, và hành được chọn làm Dụng Thần là <b>${ELEMENT_NAMES[dungThan.dungThan]}</b>${dungThan.hyThan!==dungThan.dungThan?` (Hỷ Thần đi kèm là ${ELEMENT_NAMES[dungThan.hyThan]})`:''} — đây là hành nên được nuôi dưỡng, ưu tiên trong mọi lựa chọn lớn nhỏ của cuộc sống, trong khi hành <b>${ELEMENT_NAMES[dungThan.kyThan]}</b> (Kỵ Thần) nên được hạn chế bớt. Cổ thư có câu "Dụng Thần là thuốc, Hỷ Thần là người giúp, Kỵ Thần là bệnh" — Dụng Thần thuộc nhóm <b>${nhomThapThanCuaHanh(strength.dmElem, dungThan.dungThan)}</b>, người ${THAP_THAN_GROUP_QUOTES[nhomThapThanCuaHanh(strength.dmElem, dungThan.dungThan)]||''}`;
 
   // Đoạn 2 — Kết cấu nội tại (hợp xung 4 trụ)
   let p2;
@@ -190,7 +217,7 @@ function renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta){
   // Đoạn 5 — Gợi ý thực hành
   let p5 = `Về mặt thực hành hằng ngày, những gợi ý sau có thể giúp cân bằng năng lượng theo hướng có lợi cho Dụng Thần: ưu tiên màu <b>${adv.color}</b>, hướng <b>${adv.dir}</b> khi có thể chọn (chỗ ngồi làm việc, cửa chính), con số hợp mệnh <b>${adv.nums}</b>, và các lĩnh vực như <b>${adv.jobs}</b> nhìn chung phù hợp với cấu trúc lá số này hơn. Ngược lại, nên hạn chế lạm dụng hành ${ELEMENT_NAMES[dungThan.kyThan]} trong không gian sống và làm việc chính.`;
 
-  const doanVan = [p1, p2, p3, p4, p5].filter(Boolean).map(p=>`<p>${p}</p>`).join('');
+  const doanVan = [p0, p1, p2, p3, p4, p5].filter(Boolean).map(p=>`<p>${p}</p>`).join('');
   document.getElementById('advice-content').innerHTML = doanVan +
     `<div class="disclaimer">Đây là bản tổng hợp tự động, kết nối lại các kết quả đã tính ở những mục phía trên (Vượng/Nhược, Cách Cục, Dụng Thần, Hợp Xung, Đại Vận/Lưu Niên, Tính Cách) thành một mạch văn liền — không phải một nguồn thông tin mới. Tứ Trụ là một góc nhìn tham khảo về xu hướng, không quyết định hoàn toàn số phận. Mọi quyết định quan trọng (sự nghiệp, hôn nhân, sức khỏe, tài chính) nên dựa trên thực tế cuộc sống, tư vấn từ chuyên gia trong lĩnh vực liên quan, và sự chủ động của chính bạn.</div>`;
 }
@@ -216,6 +243,7 @@ function renderPhase2(data, manual){
   safe('12 Cung Trường Sinh', 'truongsinh-content', ()=>renderTruongSinh(data, strength));
   safe('Cách Cục', 'cachcuc-content', ()=>renderChinhCach(data, strength));
   safe('Cách Cục Đặc Biệt', 'cachcuc-content', ()=>renderCachCucDacBiet(data, strength));
+  const specialCach = safe('Xét Cách Cục Đặc Biệt', null, ()=>xetCachCucDacBiet(data, strength)) || [];
   const cachCuc = safe('Xác định Cách Cục', null, ()=>xacDinhChinhCach(data)) || {name:'—'};
   const dungThan = safe('Dụng Thần', 'dungthan-content', ()=>renderDungThan(data, strength));
   if(!dungThan) return; // hầu hết các mục sau đều cần dungThan
@@ -231,5 +259,5 @@ function renderPhase2(data, manual){
   safe('Tính Cách', 'tinhcach-content', ()=>renderTinhCach(data, strength, dungThan));
   safe('Giàu Nghèo · Sang Hèn · Cát Hung', 'giaunghesanghen-content', ()=>renderGiauNgheoSangHen(data, strength, dungThan));
   safe('Dự Đoán Theo Từng Mục', 'categories-content', ()=>renderCategories(data, gender, strength, dungThan));
-  safe('Tư Vấn Tổng Hợp', 'advice-content', ()=>renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta));
+  safe('Tư Vấn Tổng Hợp', 'advice-content', ()=>renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta, specialCach));
 }
