@@ -198,23 +198,38 @@ function renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta){
 function renderPhase2(data, manual){
   const gender = document.getElementById('p-gender').value;
   const name = document.getElementById('p-name').value.trim();
-  const strength = renderStrength(data, manual);
-  renderTruongSinh(data, strength);
-  renderChinhCach(data, strength);
-  renderCachCucDacBiet(data, strength);
-  const cachCuc = xacDinhChinhCach(data);
-  const dungThan = renderDungThan(data, strength);
-  const hopXung = renderHopXungHinhHai(data, dungThan);
-  renderThaiNguyenCungMenh(data, strength, dungThan);
-  renderThanSat(data, strength);
-  renderThanSatMoRong(data, strength);
-  const meta = renderDaiVanLuuNien(data, gender, manual, dungThan);
-  renderSpecialYears(data, dungThan, meta);
-  renderLucThanMoRong(data, gender, strength, dungThan);
-  renderHonNhan(data, gender, strength, dungThan);
-  renderTaiQuanCongDanh(data, strength, dungThan);
-  renderTinhCach(data, strength, dungThan);
-  renderGiauNgheoSangHen(data, strength, dungThan);
-  renderCategories(data, gender, strength, dungThan);
-  renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta);
+
+  // Chạy từng mục ĐỘC LẬP: nếu 1 mục lỗi, chỉ mục đó báo lỗi rõ ràng —
+  // các mục khác vẫn tính và hiển thị bình thường, không bị kéo theo.
+  function safe(label, panelId, fn){
+    try{ return fn(); }
+    catch(e){
+      console.error(`[Lỗi ở mục "${label}"]`, e);
+      const el = panelId && document.getElementById(panelId);
+      if(el) el.innerHTML = `<p style="color:#a5342b;">⚠ Có lỗi khi tính mục "${label}": ${e.message}. Các mục khác vẫn hiển thị bình thường — vui lòng báo lại lỗi này kèm ngày giờ sinh đã nhập để được sửa.</p>`;
+      return null;
+    }
+  }
+
+  const strength = safe('Nhật Nguyên: Vượng/Nhược', 'strength-content', ()=>renderStrength(data, manual));
+  if(!strength) return; // hầu hết các mục sau đều cần strength, không thể tiếp tục an toàn
+  safe('12 Cung Trường Sinh', 'truongsinh-content', ()=>renderTruongSinh(data, strength));
+  safe('Cách Cục', 'cachcuc-content', ()=>renderChinhCach(data, strength));
+  safe('Cách Cục Đặc Biệt', 'cachcuc-content', ()=>renderCachCucDacBiet(data, strength));
+  const cachCuc = safe('Xác định Cách Cục', null, ()=>xacDinhChinhCach(data)) || {name:'—'};
+  const dungThan = safe('Dụng Thần', 'dungthan-content', ()=>renderDungThan(data, strength));
+  if(!dungThan) return; // hầu hết các mục sau đều cần dungThan
+  const hopXung = safe('Hợp Xung Hình Hại', 'hopxung-content', ()=>renderHopXungHinhHai(data, dungThan)) || {};
+  safe('Thai Nguyên & Cung Mệnh', 'thainguyen-content', ()=>renderThaiNguyenCungMenh(data, strength, dungThan));
+  safe('Thần Sát', 'thansat-content', ()=>renderThanSat(data, strength));
+  safe('Thần Sát Mở Rộng', 'thansat-content', ()=>renderThanSatMoRong(data, strength));
+  const meta = safe('Đại Vận & Lưu Niên', 'daivan-content', ()=>renderDaiVanLuuNien(data, gender, manual, dungThan));
+  safe('Những Năm Đáng Chú Ý', 'specialyears-content', ()=>renderSpecialYears(data, dungThan, meta));
+  safe('Lục Thân Mở Rộng', 'lucthan-content', ()=>renderLucThanMoRong(data, gender, strength, dungThan));
+  safe('Hôn Nhân', 'honnhan-content', ()=>renderHonNhan(data, gender, strength, dungThan));
+  safe('Tài Vận · Quan Vận · Công Danh', 'taiquan-content', ()=>renderTaiQuanCongDanh(data, strength, dungThan));
+  safe('Tính Cách', 'tinhcach-content', ()=>renderTinhCach(data, strength, dungThan));
+  safe('Giàu Nghèo · Sang Hèn · Cát Hung', 'giaunghesanghen-content', ()=>renderGiauNgheoSangHen(data, strength, dungThan));
+  safe('Dự Đoán Theo Từng Mục', 'categories-content', ()=>renderCategories(data, gender, strength, dungThan));
+  safe('Tư Vấn Tổng Hợp', 'advice-content', ()=>renderAdvice(data, strength, dungThan, name, cachCuc, hopXung, meta));
 }

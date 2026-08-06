@@ -25,27 +25,47 @@ function xacDinhLucThanTuTangCan(tangCanIdx, dayCan, position, gender){
   return {god, roles};
 }
 
+// Trả về tất cả vai trò lục thân tìm thấy tại 1 vị trí trụ (mở hết tàng can) —
+// dùng chung cho cả Bản Đồ Lục Thân tĩnh và phần Đại Vận/Lưu Niên (mục 2.7) khi
+// cần biết ai bị ảnh hưởng lúc trụ đó bị xung/hình.
+function lucThanTaiViTri(data, position, gender){
+  const chi = data[position].chi;
+  const roles = new Set();
+  TANG_CAN[chi].forEach(tc=>{
+    const r = xacDinhLucThanTuTangCan(tc, data.day.can, position, gender);
+    r.roles.forEach(role=>roles.add(role));
+  });
+  return [...roles];
+}
+
 function renderLucThanMoRong(data, gender, strength, dungThan){
   const box = document.getElementById('lucthan-content');
   if(!box) return;
   const positions = ['year','month','day','hour'];
-  const g = tallyTenGodGroups(data);
+  const g = tallyTenGodGroups(data, strength);
 
   // 1) Bản đồ Lục Thân theo Tàng Can (mở từng tàng can của 4 trụ)
   let mapHtml = `<h4>Bản Đồ Lục Thân Theo Tàng Can</h4>`;
   const chaCandidates = [], meCandidates = [];
+  const positionQuotesFound = [];
   positions.forEach(pos=>{
     const chi = data[pos].chi;
     const rows = TANG_CAN[chi].map((tc,i)=>{
       const {god, roles} = xacDinhLucThanTuTangCan(tc, data.day.can, pos, gender);
       if(roles.includes('Cha')) chaCandidates.push(pos);
       if(roles.includes('Mẹ')) meCandidates.push(pos);
+      if(typeof POSITION_QUOTES!=='undefined' && POSITION_QUOTES[god] && POSITION_QUOTES[god][pos]){
+        positionQuotesFound.push(POSITION_QUOTES[god][pos]);
+      }
       const roleTxt = roles.length ? `<span class="tag tag-good">${roles.join(', ')}</span>` : '';
       return `${CAN[tc]}(${TANG_ROLE[i]}: ${god})${roleTxt?' '+roleTxt:''}`;
     }).join(' · ');
     mapHtml += `<p><b>Trụ ${LUC_THAN_POS_LABEL[pos]}</b> (${pos==='day'?CAN[data.day.can]+' ':''}${CHI[chi]}): ${rows}</p>`;
   });
   mapHtml += `<p style="font-size:0.9em;opacity:0.85;">Nguyên tắc: một cung vị (Năm/Tháng/Ngày/Giờ) không tự động gán cứng cho 1 người — phải mở tàng can rồi đối chiếu Thập Thần mới xác định đúng ai liên quan. Bảng trên áp dụng đúng cách đó cho cả 4 trụ gốc.</p>`;
+  if(positionQuotesFound.length){
+    mapHtml += `<h4 style="margin-top:10px;">Câu Phú Theo Vị Trí</h4>` + [...new Set(positionQuotesFound)].map(q=>`<p style="font-style:italic;opacity:0.9;">${q}</p>`).join('');
+  }
 
   // 2) Cha Mẹ (§14.1)
   let chaMeHtml = `<h4 style="margin-top:14px;">Cha Mẹ</h4>`;
@@ -79,7 +99,7 @@ function renderLucThanMoRong(data, gender, strength, dungThan){
   }
 
   // 3) Anh chị em (§14.3)
-  const soLuongUocTinh = Math.max(0, Math.round(g.tyKiep));
+  const soLuongUocTinh = Math.max(0, Math.round(g.rawTyKiep));
   let acEHtml = `<h4 style="margin-top:14px;">Anh Chị Em</h4>`;
   acEHtml += `<p>Ước tính số lượng dựa trên Tỷ/Kiếp (kể cả tàng can, đã điều chỉnh sinh vượng/tử tuyệt một phần qua trọng số): khoảng <b>${soLuongUocTinh}</b> người — tài liệu lưu ý sai số thường 1-2 người, và ở Đông Nam Á thực tế hay nhiều hơn khoảng gấp đôi so với công thức gốc Trung Quốc.</p>`;
   const acENotes = [];
