@@ -16,16 +16,28 @@ function chiTrigersKhai(vanChi, c){
 }
 
 // §11.4 — chấm điểm cát hung của 1 tuế/vận (can,chi) so với mệnh cục + dụng thần
-function danhGiaCatHungVan(vanCan, vanChi, data, dungThan, gender){
+function danhGiaCatHungVan(vanCan, vanChi, data, dungThan, gender, strength){
   const chis4 = [data.year.chi, data.month.chi, data.day.chi, data.hour.chi];
   const cans4 = [data.year.can, data.month.can, data.day.can, data.hour.can];
   const posNames = ['year','month','day','hour'];
   const vanElem = elementOfCan(vanCan);
   let score = 0;
   const notes = [];
+  const quotes = [];
 
-  if(vanElem===dungThan.dungThan || vanElem===dungThan.hyThan){ score+=1.5; notes.push('Can vận thuộc Dụng/Hỷ Thần'); }
-  else if(vanElem===dungThan.kyThan){ score-=1.5; notes.push('Can vận thuộc Kỵ Thần'); }
+  if(vanElem===dungThan.dungThan){ score+=1.5; notes.push('Can vận thuộc Dụng Thần'); quotes.push(DAIVAN_QUOTES.dungThanVan); }
+  else if(vanElem===dungThan.hyThan){ score+=1.5; notes.push('Can vận thuộc Hỷ Thần'); quotes.push(DAIVAN_QUOTES.hyThanVan); }
+  else if(vanElem===dungThan.kyThan){ score-=1.5; notes.push('Can vận thuộc Kỵ Thần'); quotes.push(DAIVAN_QUOTES.kyThanVan); }
+
+  // Câu thơ theo nhóm Thập Thần của vận, đối chiếu với cấu trúc sẵn có của mệnh cục
+  if(strength && strength.perElem){
+    const dmElem = strength.dmElem;
+    const g = tallyTenGodGroups(data, strength);
+    const nhomVan = nhomThapThanCuaHanh(dmElem, vanElem);
+    if(nhomVan==='Tài' && g.tyKiep>=3.5) quotes.push(DAIVAN_QUOTES.taiVanGapTyKiep);
+    else if(nhomVan==='Quan Sát' && g.thucThuong>=3.5) quotes.push(DAIVAN_QUOTES.quanVanGapThuongQuan);
+    else if(nhomVan==='Ấn' && g.tai>=3.5) quotes.push(DAIVAN_QUOTES.anVanGapTaiPha);
+  }
 
   let bothHitTKDX = false; // Thiên khắc địa xung với cùng 1 trụ
   chis4.forEach((c,i)=>{
@@ -42,6 +54,7 @@ function danhGiaCatHungVan(vanCan, vanChi, data, dungThan, gender){
           if(roles.length) lucThanNote = ` — liên quan đến ${roles.join(', ')} (mở tàng can trụ này)`;
         }
         score-=1.5; notes.push(`Thiên Khắc Địa Xung với trụ ${PILLAR_LABELS_4[i]}${(i===2)?' (trụ Ngày — cung bản thân/vợ chồng, cần đặc biệt thận trọng)':''}${lucThanNote}`);
+        if(strength) notes.push(canCoText(strength.verdict, strength.ratio));
         bothHitTKDX = true;
       }
     }
@@ -67,7 +80,7 @@ function danhGiaCatHungVan(vanCan, vanChi, data, dungThan, gender){
   if(score>=1.5){ level='good'; label='Tốt'; }
   else if(score<=-1.5){ level='bad'; label='Xấu'; }
   else { level='neutral'; label='Thường'; }
-  return {score, level, label, notes, bothHitTKDX};
+  return {score, level, label, notes, bothHitTKDX, quotes};
 }
 
 // §11.3 — bảng tổng hợp Đại Vận x Lưu Niên

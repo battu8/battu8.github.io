@@ -16,10 +16,41 @@ function nhomThapThanCuaHanh(dmElem, elem){
 }
 
 /* ---------------- §15 — HÔN NHÂN ---------------- */
+// Xác định "sớm/muộn" dựa trên vị trí trụ nào mang nhóm Thập Thần cần tìm — theo
+// ẩn dụ cây (Năm=gốc/tuổi trẻ, Tháng=thân/thanh niên, Ngày=hoa/trung niên,
+// Giờ=quả/hậu vận) đã dùng ở mục 2.2. Xét cả lộ can lẫn tàng can của từng trụ.
+function timViTriTheoNhom(data, dmElem, nhomTarget){
+  const positions = ['year','month','day','hour'];
+  const found = [];
+  positions.forEach(pos=>{
+    if(pos!=='day'){
+      const loElem = elementOfCan(data[pos].can);
+      if(nhomThapThanCuaHanh(dmElem, loElem)===nhomTarget) found.push(pos);
+    }
+    TANG_CAN[data[pos].chi].forEach(tc=>{
+      if(nhomThapThanCuaHanh(dmElem, elementOfCan(tc))===nhomTarget) found.push(pos);
+    });
+  });
+  return [...new Set(found)];
+}
+function xacDinhSomMuonText(positions){
+  if(positions.length===0) return null;
+  const idxMap = {year:1, month:2, day:3, hour:4};
+  const avg = positions.reduce((s,p)=>s+idxMap[p],0)/positions.length;
+  const posLabel = {year:'Năm', month:'Tháng', day:'Ngày', hour:'Giờ'};
+  const viTriText = positions.map(p=>posLabel[p]).join(', ');
+  let khiText;
+  if(avg<=1.8) khiText = 'khá sớm — thường rõ nét ngay từ thời niên thiếu/tuổi trẻ';
+  else if(avg<=2.6) khiText = 'sớm — thường rõ nét từ giai đoạn thanh niên';
+  else if(avg<=3.4) khiText = 'ở mức trung bình, chớm rõ hơn từ khoảng trung niên';
+  else khiText = 'khá muộn — thường chỉ thật sự rõ nét từ trung niên trở về sau, thậm chí hậu vận';
+  return `Xuất hiện ở trụ ${viTriText}, nên xu hướng tới ${khiText}.`;
+}
+
 function renderHonNhan(data, gender, strength, dungThan){
   const box = document.getElementById('honnhan-content');
   if(!box) return;
-  const g = tallyTenGodGroups(data);
+  const g = tallyTenGodGroups(data, strength);
   const dmCan = data.day.can;
   const dayChi = data.day.chi, hourChi = data.hour.chi;
   const saoVoChongLevel = gender==='nam' ? g.tai : g.quanSat;
@@ -28,6 +59,10 @@ function renderHonNhan(data, gender, strength, dungThan){
   let html = `<h4>Sao Vợ/Chồng</h4><p>${label} hiện ở mức <b>${saoVoChongLevel.toFixed(1)}</b> điểm. `;
   html += saoVoChongLevel===0 ? 'Không xuất hiện rõ trong Tứ Trụ — theo §15.4, có thể là dấu hiệu duyên vợ/chồng đến muộn hoặc cần chủ động hơn.' : '';
   html += `</p>`;
+  const nhomVoChong = gender==='nam' ? 'Tài' : 'Quan Sát';
+  const viTriVoChong = timViTriTheoNhom(data, strength.dmElem, nhomVoChong);
+  const somMuonVoChong = xacDinhSomMuonText(viTriVoChong);
+  if(somMuonVoChong) html += `<p>${somMuonVoChong}</p>`;
 
   const canElem = elementOfCan(dmCan), chiElem = ELEMENT_OF_CHI[dayChi];
   let canChiNote;
@@ -82,11 +117,14 @@ function renderHonNhan(data, gender, strength, dungThan){
 function renderTaiQuanCongDanh(data, strength, dungThan){
   const box = document.getElementById('taiquan-content');
   if(!box) return;
-  const g = tallyTenGodGroups(data);
+  const g = tallyTenGodGroups(data, strength);
   const dmElem = strength.dmElem;
   const nhomDungThan = nhomThapThanCuaHanh(dmElem, dungThan.dungThan);
 
   let html = `<h4>Tài Vận</h4>`;
+  const viTriTai = timViTriTheoNhom(data, dmElem, 'Tài');
+  const somMuonTai = xacDinhSomMuonText(viTriTai);
+  if(somMuonTai) html += `<p>${somMuonTai}</p>`;
   html += `<p>Nhóm Thập Thần của Dụng Thần trong lá số này là <b>${nhomDungThan}</b>.</p>`;
   const taiNotes = [];
   if(strength.verdict==='vuong' && g.tai>=2.5) taiNotes.push({t:'good', text:'Thân vượng và Tài cũng khá vượng — theo §18.1, đây là tổ hợp có tiềm năng phú quý song toàn, đặc biệt nếu có thêm Quan tinh.'});
@@ -166,10 +204,11 @@ const TC_DUNG_THAN_TEXT = {
 function renderTinhCach(data, strength, dungThan){
   const box = document.getElementById('tinhcach-content');
   if(!box) return;
-  const g = tallyTenGodGroups(data);
+  const g = tallyTenGodGroups(data, strength);
   const dmElem = strength.dmElem;
 
-  let html = `<h4>Bốn Mẫu Hình Tổng Quát</h4>`;
+  let html = `<h4>Theo Nhật Can ${CAN[data.day.can]}</h4><p>${NHAT_CAN_TINH_CACH[data.day.can]}</p>`;
+  html += `<h4 style="margin-top:14px;">Bốn Mẫu Hình Tổng Quát</h4>`;
   const coKhacChe = (g.thucThuong + g.quanSat) >= 2;
   const coSinhPhu = (g.an + g.tyKiep) >= 2;
   let mauHinh;
@@ -203,6 +242,7 @@ function renderTinhCach(data, strength, dungThan){
   const dtGod = nhomThapThanCuaHanh(dmElem, dungThan.dungThan);
   html += `<h4 style="margin-top:14px;">Theo Dụng Thần</h4>`;
   html += `<p>Dụng Thần thuộc nhóm <b>${dtGod}</b> — theo §20.5, thiên hướng ${TC_DUNG_THAN_TEXT[dtGod]||''}</p>`;
+  if(THAP_THAN_GROUP_QUOTES[dtGod]) html += `<p style="font-style:italic;opacity:0.9;">Cổ thư mô tả người có ${dtGod} lộ rõ, đắc dụng thường ${THAP_THAN_GROUP_QUOTES[dtGod]}</p>`;
 
   html += `<div class="disclaimer">Áp dụng theo tài liệu §20. "Vượng quá" được coi là khi Phe Mình chiếm từ 65% tổng cục trở lên, "Nhược quá" khi dưới 20% — đây là ngưỡng công cụ tự chọn để minh họa, tài liệu gốc không cho số cụ thể. Đây là xu hướng tính cách tham khảo dựa trên cấu trúc Ngũ Hành/Thập Thần, không phải đánh giá con người toàn diện — tính cách thực tế còn do môi trường, giáo dục, và lựa chọn cá nhân định hình rất nhiều.</div>`;
   box.innerHTML = html;

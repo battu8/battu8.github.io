@@ -24,7 +24,7 @@ function computeDaiVan(data, gender){
   return {forward, startYears, startMonths, list};
 }
 
-function renderDaiVanLuuNien(data, gender, manual, dungThan){
+function renderDaiVanLuuNien(data, gender, manual, dungThan, strength){
   if(manual){
     document.getElementById('daivan-content').innerHTML = `<div class="disclaimer">Không thể tính Đại Vận &amp; Lưu Niên chính xác khi nhập trực tiếp Tứ Trụ (không có ngày giờ sinh cụ thể). Vui lòng dùng tab "Dương lịch" hoặc "Âm lịch" để xem đầy đủ mục này.</div>`;
     document.getElementById('luunien-content').innerHTML = '';
@@ -42,7 +42,7 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
   dv.list.forEach((p,i)=>{
     const endAge = p.startAge+9;
     const isCurrent = currentAge>=p.startAge && currentAge<=endAge;
-    const cat = danhGiaCatHungVan(p.can, p.chi, data, dungThan);
+    const cat = danhGiaCatHungVan(p.can, p.chi, data, dungThan, gender, strength);
     if(isCurrent){ currentDvCat = cat; currentDvPillar = p; }
     dvRows += `<tr class="${isCurrent?'current-row':''}"><td>${i+1}</td><td>${p.startAge}${i===0&&p.startMonths?'.'+p.startMonths+'th':''}–${endAge} tuổi</td><td>${CAN[p.can]} ${CHI[p.chi]}</td><td>${napAmOf(p.can,p.chi)}</td><td>${catHungTag(cat.level,cat.label)}</td></tr>`;
   });
@@ -50,9 +50,18 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
   if(currentDvCat && currentDvCat.notes.length){
     currentDvNote = `<p style="margin-top:10px;font-size:0.92em;">Chi tiết đại vận hiện tại: ${currentDvCat.notes.join('; ')}.</p>`;
   }
+  if(currentDvCat && currentDvCat.quotes && currentDvCat.quotes.length){
+    currentDvNote += currentDvCat.quotes.filter(Boolean).map(q=>`<p style="font-style:italic;opacity:0.9;">${q}</p>`).join('');
+  }
+  // #16/#17 — vận đầu đời hoặc cuối đời mà tốt thì có sắc thái khác vận tốt giữa đời
+  if(currentDvPillar && currentDvCat && currentDvCat.label==='Tốt'){
+    if(currentDvPillar.startAge<=17) currentDvNote += `<p style="font-style:italic;opacity:0.9;">${DAIVAN_QUOTES.vanDauDoi}</p>`;
+    else if(currentDvPillar.startAge>=58) currentDvNote += `<p style="font-style:italic;opacity:0.9;">${DAIVAN_QUOTES.vanCuoiDoi}</p>`;
+  }
   const phucPhanDv = currentDvPillar ? kiemTraPhucPhanNgam(currentDvPillar.can, currentDvPillar.chi, data) : [];
   const phucPhanDvHtml = phucPhanDv.length ? `<p style="margin-top:8px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Đại vận hiện tại ${phucPhanDv.map(f=>f.text).join('; ')} — đây là giai đoạn tài liệu khuyến nghị nên đặc biệt thận trọng, không phải điềm báo chắc chắn (xem ghi chú cuối mục).</p>` : '';
   document.getElementById('daivan-content').innerHTML = `
+    <p style="font-size:0.9em;opacity:0.8;">Nguyên tắc nền (theo khẩu quyết cổ): Lưu Niên ví như Vua, Đại Vận ví như Thần, Mệnh Cục ví như Dân — Vua có thể sinh khắc cả Thần lẫn Dân, Thần chỉ sinh khắc được Dân, còn Dân không khắc lại được Vua. Vì vậy khi Lưu Niên và Đại Vận cùng bất lợi cho mệnh cục, ảnh hưởng thường rõ hơn hẳn so với chỉ một bên bất lợi.</p>
     <p>Hướng đi: <b>${dv.forward? "Thuận hành":"Nghịch hành"}</b> (${gender==="nam"?"Nam mệnh":"Nữ mệnh"}, năm sinh Can ${CAN[data.year.can]} thuộc ${data.year.can%2===0?"Dương":"Âm"}) — nhập vận lúc <b>${dv.startYears} tuổi ${dv.startMonths} tháng</b>.</p>
     <div class="table-scroll"><table class="data-table">
       <tr><th>#</th><th>Giai đoạn</th><th>Can Chi</th><th>Nạp Âm</th><th>Cát hung</th></tr>
@@ -68,7 +77,7 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
     const chi = ((y+8)%12+12)%12;
     const age = y - birthYear;
     const isCurrent = (y===centerYear);
-    const cat = danhGiaCatHungVan(can, chi, data, dungThan);
+    const cat = danhGiaCatHungVan(can, chi, data, dungThan, gender, strength);
     if(isCurrent) centerCat = cat;
     lnRows += `<tr class="${isCurrent?'current-row':''}"><td>${age}</td><td>${y}</td><td>${CAN[can]} ${CHI[chi]}</td><td>${catHungTag(cat.level,cat.label)}</td></tr>`;
   }
@@ -77,12 +86,17 @@ function renderDaiVanLuuNien(data, gender, manual, dungThan){
     const key = `${currentDvCat.label}-${centerCat.label}`;
     const ketQua = BANG_TONG_HOP_DV_LN[key] || 'Bình thường';
     tongHopHtml = `<p style="margin-top:10px;"><b>Nhận định tổng hợp năm ${centerYear}</b> (§11.3): Đại Vận <b>${currentDvCat.label}</b> × Lưu Niên <b>${centerCat.label}</b> → <b>${ketQua}</b>.</p>`;
+    tongHopHtml += `<p style="font-style:italic;opacity:0.9;">"Đại vận 10 năm tốt, 1 năm xấu cũng qua; đại vận 10 năm xấu, 1 năm tốt cũng không nên [chủ quan]" — Đại Vận vẫn là khung nền chính của cả 10 năm, Lưu Niên chỉ điều chỉnh thêm chứ không đảo ngược hoàn toàn xu hướng lớn.</p>`;
     if(centerCat.notes.length) tongHopHtml += `<p style="font-size:0.92em;">Chi tiết lưu niên ${centerYear}: ${centerCat.notes.join('; ')}.</p>`;
+    if(centerCat.quotes && centerCat.quotes.length) tongHopHtml += centerCat.quotes.filter(Boolean).map(q=>`<p style="font-style:italic;opacity:0.9;">${q}</p>`).join('');
     const phucPhanLn = kiemTraPhucPhanNgam(can2(centerYear), chi2(centerYear), data);
     if(phucPhanLn.length) tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý (§11.6)</span> Lưu niên ${centerYear} ${phucPhanLn.map(f=>f.text).join('; ')} — nên thận trọng hơn, không phải điềm báo chắc chắn.</p>`;
     if(currentDvPillar){
       const nxn = kiemTraNhiXungNhat(currentDvPillar.chi, chi2(centerYear), data);
-      if(nxn) tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý — "Nhị Xung Nhất"</span> Đại Vận và Lưu Niên ${centerYear} cùng mang chi <b>${CHI[currentDvPillar.chi]}</b>, cùng xung vào chi <b>${CHI[nxn.chi]}</b> ở trụ ${nxn.pos} — theo tài liệu, lực xung khi 2 nguồn (Vận + Niên) cùng nhắm 1 điểm mạnh hơn hẳn xung 1-1 thông thường, nên đây là giai đoạn đáng chú ý cần đặc biệt thận trọng hơn, không phải điềm báo chắc chắn về điều gì cụ thể.</p>`;
+      if(nxn){
+        tongHopHtml += `<p style="margin-top:6px;"><span class="tag tag-bad">Lưu ý — "Nhị Xung Nhất"</span> Đại Vận và Lưu Niên ${centerYear} cùng mang chi <b>${CHI[currentDvPillar.chi]}</b>, cùng xung vào chi <b>${CHI[nxn.chi]}</b> ở trụ ${nxn.pos} — theo tài liệu, lực xung khi 2 nguồn (Vận + Niên) cùng nhắm 1 điểm mạnh hơn hẳn xung 1-1 thông thường, nên đây là giai đoạn đáng chú ý cần đặc biệt thận trọng hơn, không phải điềm báo chắc chắn về điều gì cụ thể.</p>`;
+        tongHopHtml += `<p style="font-style:italic;opacity:0.9;">${DAIVAN_QUOTES.tuevanTrungThaiTue}</p>`;
+      }
     }
   }
   document.getElementById('luunien-content').innerHTML = `

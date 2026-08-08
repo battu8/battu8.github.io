@@ -68,3 +68,29 @@ const CACH_CUC_ENRICH = {
   'Kiến Lộc': 'Cổ thư: Kiến Lộc Cách (Nhật Can vượng, gặp đúng Lộc tại tháng sinh) — Thân vượng nên có Tài Quan để tiết bớt, tránh kinh doanh mạo hiểm đơn độc, hợp hướng tự lập ổn định hơn.',
   'Kình Dương': 'Cổ thư: Dương Nhẫn Cách (Nhật Can vượng quá mức) — cực vượng cần Thất Sát chế ngự hoặc Thực Thương tiết bớt mới phát được; giàu thường đến nhờ sự liều lĩnh, quyết đoán hơn là ổn định từ tốn.'
 };
+
+/* ============================================================
+   CÂU THƠ ĐẠI VẬN — LƯU NIÊN (chọn lọc từ "60 câu thơ phú Đại Vận
+   Lưu Niên"). Nguồn thứ cấp, tài liệu tự nhận chưa đối chiếu bản
+   gốc — chỉ dùng làm chất liệu văn phong, không phải căn cứ tuyệt
+   đối. Bỏ các câu dùng "bệnh/tai nạn/thọ" dù tài liệu chú thích là
+   ẩn dụ, giữ đúng ranh giới an toàn của dự án.
+   ============================================================ */
+const DAIVAN_QUOTES = {
+  hyThanVan: '"Đại vận Hỷ Thần tựa xuân sang, cây khô gặp nước lộc lại càng" — mười năm này thuận theo chiều gió, làm gì cũng dễ hanh thông hơn hẳn bình thường.',
+  kyThanVan: '"Đại vận Kỵ Thần tựa sương sa, cây xanh gặp rét cũng héo hoa" — mười năm này nên đi chậm, cẩn trọng, tu dưỡng tâm tính để vượt qua giai đoạn ngược gió.',
+  dungThanVan: '"Dụng Thần tại vận, mười năm hanh, như thuyền xuôi gió được an lành" — đây là kiểu vận thuận lợi nhất trong khả năng của lá số này.',
+  taiVanGapTyKiep: '"Đại vận Tài địa, tiền như nước... nhưng gặp Tỷ Kiếp thì phá tán, anh em tranh đoạt hết sạch không" — cơ hội tài chính nhiều nhưng bản mệnh vốn nhiều Tỷ/Kiếp nên dễ có người tranh phần, cần đặc biệt thận trọng khi hùn hạp/cho vay trong giai đoạn này.',
+  quanVanGapThuongQuan: '"Đại vận Quan địa, cầu quan dễ... nhưng gặp Thương Quan thì mất chức, thị phi quan tụng đến chất chồng" — cơ hội thăng tiến nhiều nhưng bản mệnh vốn nhiều Thực/Thương nên dễ vướng thị phi/mâu thuẫn cấp trên, lời nói cần thận trọng hơn trong giai đoạn này.',
+  anVanGapTaiPha: '"Đại vận Ấn địa, học hành tới, mua nhà tậu đất được an cư... nhưng gặp Tài phá thì bỏ học, bằng cấp dở dang mộng cũng hư" — cơ hội học hành/giấy tờ nhiều nhưng bản mệnh vốn nhiều Tài nên dễ bị việc kiếm tiền kéo đi, cần ưu tiên rõ ràng nếu muốn hoàn thành việc học/bằng cấp trong giai đoạn này.',
+  vanDauDoi: '"Vận tốt đầu đời tuổi trẻ sướng, như hoa nở sớm được người thương, nhưng nếu không căn thì chóng tàn, phải có gốc rễ mới kiên cường" — thuận lợi đến sớm là điều tốt, nhưng nên tranh thủ xây nền tảng vững thay vì chỉ tận hưởng, để không "sớm nở tối tàn".',
+  vanCuoiDoi: '"Vận tốt cuối đời hậu vận sướng, đại khí vãn thành mới là vương, trẻ vất vả, già an lạc" — nếu những vận trước có phần vất vả, đây thường là giai đoạn "về đích" tốt hơn hẳn, kiểu thành công đến muộn nhưng bền.',
+  tuevanTrungThaiTue: '"Đại vận trùng phùng với Thái Tuế, phúc họa đôi đường chớ có chê, phúc lớn họa lớn cùng một lúc" — giai đoạn biến động mạnh cả hai chiều, không nên chủ quan dù đang thuận, cũng không nên quá bi quan dù đang khó.'
+};
+// #35 — mức độ nghiêm trọng của xung Lưu Niên/Đại Vận với mệnh cục phụ thuộc "căn cơ"
+// (thân vượng/nhược) của lá số: "căn cơ ổn cố hữu kinh vô hiểm; căn cơ hư nhược, hung hiểm chi niên"
+function canCoText(verdict, ratio){
+  if(verdict==='vuong' && ratio>=0.55) return 'Lá số này thân khá vượng ("căn cơ ổn cố") — theo tài liệu, dù có kinh động thì phần lớn chỉ dừng ở mức xáo trộn bề mặt, ít khi thành họa lớn thật sự.';
+  if(verdict==='nhuoc' && ratio<=0.35) return 'Lá số này thân khá nhược ("căn cơ hư nhược") — theo tài liệu, cùng một mức xung động sẽ ảnh hưởng rõ rệt hơn hẳn so với người thân vượng, nên đây là điểm cần thận trọng hơn.';
+  return 'Lá số này thân ở mức trung bình — mức độ ảnh hưởng của xung động này khó nói chắc theo một chiều, cần xét thêm các yếu tố khác trong lá số.';
+}
