@@ -319,6 +319,12 @@
       <div class="form-title">2.15 — Tư Vấn Tổng Hợp</div>
       <div id="advice-content" class="analysis-body"></div>
     </div>
+
+    <div class="card wide-card" id="panel-claude-prompt">
+      <div class="form-title">Hỏi Thêm AI</div>
+      <p class="analysis-body" style="margin-bottom:14px;">Sao chép toàn bộ dữ liệu Tứ Trụ đã tính (Cách Cục, Vượng/Nhược, Dụng Thần, Hợp Xung, Thần Sát, Đại Vận...) thành 1 đoạn văn bản có cấu trúc, để dán vào cuộc trò chuyện với AI (Claude hay AI khác) và hỏi sâu hơn theo đúng câu hỏi cụ thể của bạn — AI sẽ luận giải dựa trên số liệu đã có sẵn, không cần tính lại từ đầu.</p>
+      <button class="btn-no" id="claude-prompt-btn" onclick="copyClaudePrompt()" style="margin:0 auto;">Sao chép Prompt cho AI</button>
+    </div>
   </div>
 
 </div>
@@ -361,5 +367,6 @@
 <script src="js/18-quote-bank.js"></script>
 <script src="js/19-phase2-thansat-mo-rong.js"></script>
 <script src="js/20-phase2-cachcuc-dacbiet.js"></script>
+<script src="js/21-claude-prompt.js"></script>
 </body>
 </html>
